@@ -8,7 +8,8 @@
     "net-keepalive": "^1.1.1",
     "path": "^0.12.7",
     "request": "^2.85.0",
-    "request-progress": "^3.0.0"
+    "request-progress": "^3.0.0",
+    "moment": "^2.24.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -15,16 +15,18 @@ var moment = require('moment');
 var TRACE   = true;
 var BASEURI   = false;
 
+var DATETIME_FORMAT = 'YYYY.MM.DD-HH.mm.ss';
+
 var dahua = function(options) {
   
   events.EventEmitter.call(this);
   
   TRACE = options.log;
   
-  BASEURI = 'http://'+ options.host + ':' + options.port;
+  HOST = options.host;
+  BASEURI = 'http://'+ HOST + ':' + options.port;
   USER = options.user;
   PASS = options.pass;
-  HOST = options.host;
 
   if( options.cameraAlarms === undefined ) {
     options.cameraAlarms = true;
@@ -335,7 +337,7 @@ dahua.prototype.startFileFind = function (objectId,channel,startTime,endTime,typ
   });
 
   var url = BASEURI + '/cgi-bin/mediaFileFind.cgi?action=findFile&object=' + objectId + '&condition.Channel=' + channel + '&condition.StartTime=' + startTime + '&condition.EndTime=' + endTime + typesQueryString;
-  // console.log(url);
+  if (TRACE) console.log(url);
   
   request(url, function (error, response, body) {
     if ((error)) {
@@ -534,30 +536,31 @@ dahua.prototype.saveFile = function (file,filename) {
      return 0;
     }
 
-     // the fileFind response obejct
-     // { Channel: '0',
-     // Cluster: '0',
-     // Compressed: 'false',
-     // CutLength: '634359892',
-     // Disk: '0',
-     // Duration: '495',
-     // EndTime: '2018-05-19 10:45:00',
-     // FilePath: '/mnt/sd/2018-05-19/001/dav/10/10.36.45-10.45.00[R][0@0][0].dav',
-     // Flags: [Object],
-     // Length: '634359892',
-     // Overwrites: '0',
-     // Partition: '0',
-     // Redundant: 'false',
-     // Repeat: '0',
-     // StartTime: '2018-05-19 10:36:45',
-     // Summary: [Object],
-     // SummaryOffset: '0',
-     // Type: 'dav',
-     // WorkDir: '/mnt/sd',
-     // WorkDirSN: '0' };
+    // the fileFind response obejct
+    // { Channel: '0',
+    // Cluster: '0',
+    // Compressed: 'false',
+    // CutLength: '634359892',
+    // Disk: '0',
+    // Duration: '495',
+    // EndTime: '2018-05-19 10:45:00',
+    // FilePath: '/mnt/sd/2018-05-19/001/dav/10/10.36.45-10.45.00[R][0@0][0].dav',
+    // Flags: [Object],
+    // Length: '634359892',
+    // Overwrites: '0',
+    // Partition: '0',
+    // Redundant: 'false',
+    // Repeat: '0',
+    // StartTime: '2018-05-19 10:36:45',
+    // Summary: [Object],
+    // SummaryOffset: '0',
+    // Type: 'dav',
+    // WorkDir: '/mnt/sd',
+    // WorkDirSN: '0' };
 
-     filename = this.generateFilename(HOST,file.Channel,file.StartTime,file.EndTime,file.Type);
+    var extension = path.extname(file.FilePath).substring(1);
 
+    filename = this.generateFilename(HOST, file.Channel, file.StartTime, file.EndTime, extension);
   } 
  
   progress(request(BASEURI + '/cgi-bin/RPC_Loadfile/' + file.FilePath))
@@ -626,7 +629,7 @@ dahua.prototype.getSnapshot = function (options) {
   }
 
   if (!options.filename) {
-    options.filename = this.generateFilename(HOST,options.channel,moment(),'','jpg');
+    options.filename = this.generateFilename(HOST, options.channel, moment(), '', 'jpg');
   }
 
   request(BASEURI + '/cgi-bin/snapshot.cgi?' + options.channel , function (error, response, body) {
@@ -653,10 +656,10 @@ dahua.prototype.generateFilename = function( device, channel, start, end, filety
   // to be done: LOCALIZATION ?
   startDate = moment(start);
   
-  filename += startDate.format('YYYYMMDDhhmmss');
+  filename += startDate.format(DATETIME_FORMAT);
   if(end) {
     endDate = moment(end);
-    filename += '_' + endDate.format('YYYYMMDDhhmmss');
+    filename += '_' + endDate.format(DATETIME_FORMAT);
   }
   filename += '.' + filetype;
 
