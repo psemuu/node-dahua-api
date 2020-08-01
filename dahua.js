@@ -16,6 +16,7 @@ var TRACE   = true;
 var BASEURI   = false;
 
 var DATETIME_FORMAT = 'YYYY.MM.DD-HH.mm.ss';
+var TIME_FORMAT = 'HH.mm.ss';
 
 var dahua = function(options) {
   
@@ -659,7 +660,7 @@ dahua.prototype.generateFilename = function( device, channel, start, end, filety
   filename += startDate.format(DATETIME_FORMAT);
   if(end) {
     endDate = moment(end);
-    filename += '_' + endDate.format(DATETIME_FORMAT);
+    filename += '_' + endDate.format(TIME_FORMAT);
   }
   filename += '.' + filetype;
 
