@@ -60,10 +60,9 @@ dahua.prototype.connect = function(options) {
       // Set keep-alive probes - throws ESOCKETTIMEDOUT error after ~16min if connection broken
       //NetKeepAlive.setKeepAliveInterval(socket, 1000);
       //if (TRACE) console.log('TCP_KEEPINTVL:',NetKeepAlive.getKeepAliveInterval(socket));
-      
+
       //NetKeepAlive.setKeepAliveProbes(socket, 1);
       //if (TRACE) console.log('TCP_KEEPCNT:',NetKeepAlive.getKeepAliveProbes(socket));
-      
     });
 
     client.on('response', function() {  
@@ -564,7 +563,7 @@ dahua.prototype.saveFile = function (file,filename) {
     filename = this.generateFilename(HOST, file.Channel, file.StartTime, file.EndTime, extension);
   } 
  
-  progress(request(BASEURI + '/cgi-bin/RPC_Loadfile/' + file.FilePath))
+  progress(request(BASEURI + '/cgi-bin/RPC_Loadfile/' + file.FilePath, {timeout: 60000}))
   .auth(USER,PASS,false)
   .on('progress', function (state) {
       if(TRACE) {
@@ -577,8 +576,11 @@ dahua.prototype.saveFile = function (file,filename) {
       } 
   })
   .on('error',function (error){
+      if (TRACE) console.log("Error code: " + error.code);
       if(error.code == "ECONNRESET") {
         self.emit("error", 'ERROR ON LOAD FILE COMMAND - FILE NOT FOUND?');
+      } else if (error.code == "ETIMEDOUT") {
+        self.emit("error", (error.connect === true ? 'CONNECTION ' : '') + 'TIMEOUT');
       } else {
         self.emit("error", 'ERROR ON LOAD FILE COMMAND');
       }
