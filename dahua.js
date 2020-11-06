@@ -223,14 +223,14 @@ dahua.prototype.nightProfile = function () {
 ====================================*/
 
 dahua.prototype.findFiles = function(query){
-    
-    var self = this;
-    
+    var self = this,
+        allItems = {found: 0, items: []};
+
     if ((!query.channel) || (!query.startTime) || (!query.endTime)) {
       self.emit("error",'FILE FIND MISSING ARGUMENTS');
       return 0;
     }
-    
+
     // create a finder
     this.createFileFind();
 
@@ -246,14 +246,29 @@ dahua.prototype.findFiles = function(query){
       self.nextFileFind(objectId,query.count);
     });
 
+    this.on('nextFileFindPartDone', function (objectId, items) {
+        var foundItems = parseInt(items.found);
+        if (TRACE) console.log('nextFileFindPartDone:', objectId, foundItems);
+        if (foundItems > 0) {
+            allItems.found += foundItems;
+            items.items.forEach(function (item) {
+                allItems.items.push(item);
+            });
+        }
+
+        if (foundItems == query.count) {
+            self.nextFileFind(objectId, query.count);
+        } else {
+            self.emit('nextFileFindDone',objectId,allItems);
+        }
+    });
+
     // handle the results 
     this.on('nextFileFindDone',function(objectId,items){
-
       if (TRACE) console.log('nextFileFindDone:',objectId);
       items.query = query;
       self.emit('filesFound',items);  
       self.closeFileFind(objectId);
-    
     });
 
     // close and destroy the finder
@@ -265,7 +280,6 @@ dahua.prototype.findFiles = function(query){
     this.on('destroyFileFindDone',function(objectId,body){
       if (TRACE) console.log('destroyFileFindDone:',objectId,body);
     });
-
 };
 
 // 10.1.1 Create
@@ -372,7 +386,7 @@ dahua.prototype.startFileFind = function (objectId,channel,startTime,endTime,typ
 // items[0]. FilePath =/mnt/dvr/sda0/2010/8/11/dav/15:40:50.jpg items[0]. Length =790
 // items[0]. Duration = 3600
 // items[0].SummaryOffset=2354
-// tems[0].Repeat=0
+// items[0].Repeat=0
 // items[0].WorkDir=”/mnt/dvr/sda0”
 // items[0]. Overwrites=5
 // items[0]. WorkDirSN=0
@@ -397,7 +411,6 @@ dahua.prototype.startFileFind = function (objectId,channel,startTime,endTime,typ
 // 
 
 dahua.prototype.nextFileFind = function (objectId,count) {
-  
   var self = this;
   count = count || 100;
 
@@ -428,7 +441,7 @@ dahua.prototype.nextFileFind = function (objectId,count) {
       }
     });
 
-    self.emit('nextFileFindDone',objectId,items);
+    self.emit('nextFileFindPartDone', objectId, items);
 
   }).auth(USER,PASS,false);
 };
